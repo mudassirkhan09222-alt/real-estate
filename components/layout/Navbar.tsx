@@ -56,6 +56,7 @@ export function Navbar({ forceSolid = false }: { forceSolid?: boolean }) {
               fill
               className="object-contain object-left"
               sizes="176px"
+              priority
             />
           </div>
         </Link>

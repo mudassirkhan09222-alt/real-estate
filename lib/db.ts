@@ -1,174 +1,85 @@
 /**
- * Property repository — Payload CMS Local API edition.
- *
- * Public interface is IDENTICAL to the old JSON-file version so every
- * component, page, and API route that calls these functions keeps working
- * without changes. Payload replaces the storage, auth, and admin UI.
- *
- * The Local API runs in-process — no HTTP round-trip, no cold-start penalty.
+ * SQLite singleton — better-sqlite3 + WAL mode.
+ * Tables created on first run. One admin seeded. No registration.
  */
+import Database from "better-sqlite3";
+import bcrypt from "bcryptjs";
+import path from "path";
+import fs from "fs";
 
-import type { PaginatedResult, Property, PropertyImage, PropertyQuery } from "./types";
+const DB_PATH = path.join(process.cwd(), "data", "warsi.db");
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
-/** Lazily resolves Payload to avoid importing it at module-eval time. */
-async function getPayload() {
-  const { getPayload: gp } = await import("payload");
-  const config = await import("@payload-config");
-  return gp({ config: config.default });
+let _db: Database.Database | null = null;
+
+export function getDB(): Database.Database {
+  if (_db) return _db;
+  _db = new Database(DB_PATH);
+  _db.pragma("journal_mode = WAL");
+  _db.pragma("foreign_keys = ON");
+  createTables(_db);
+  seedAdmin(_db);
+  return _db;
 }
 
-/** Maps a Payload Property document to our frontend Property shape. */
-function toProperty(doc: Record<string, unknown>): Property {
-  const images: PropertyImage[] = [];
+// ── Schema ──────────────────────────────────────────────────────────────────
 
-  const rawImages = doc.images as Array<Record<string, unknown>> | undefined;
-  if (Array.isArray(rawImages)) {
-    for (const item of rawImages) {
-      const media = item.image as Record<string, unknown> | null | undefined;
-      if (!media || typeof media !== "object") continue;
+function createTables(db: Database.Database) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS admins (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      email         TEXT    NOT NULL UNIQUE,
+      password_hash TEXT    NOT NULL
+    );
 
-      const url = typeof media.url === "string" ? media.url : "";
-      // Payload stores local uploads with relative URLs like /media/...
-      // They're served by Next.js directly from /public/media/
-      images.push({
-        id: String(media.id ?? item.id ?? Math.random()),
-        url,
-        width: typeof media.width === "number" ? media.width : 800,
-        height: typeof media.height === "number" ? media.height : 600,
-        blurDataURL: undefined,
-        alt: typeof media.alt === "string" ? media.alt : (typeof item.caption === "string" ? item.caption : ""),
-      });
-    }
-  }
+    CREATE TABLE IF NOT EXISTS properties (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      title       TEXT    NOT NULL,
+      description TEXT    NOT NULL DEFAULT '',
+      price       INTEGER NOT NULL DEFAULT 0,
+      location    TEXT    NOT NULL DEFAULT '',
+      status      TEXT    NOT NULL DEFAULT 'draft'
+                  CHECK(status IN ('published','draft')),
+      created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
 
-  return {
-    id: String(doc.id),
-    slug: String(doc.id), // use ID as slug; Payload doesn't auto-generate slugs unless you add a hook
-    title: String(doc.title ?? ""),
-    summary: String(doc.summary ?? ""),
-    description: String(doc.description ?? ""),
-    price: typeof doc.price === "number" ? doc.price : 0,
-    currency: String(doc.currency ?? "PKR"),
-    region: "Metropolitan" as Property["region"],
-    location: String(doc.location ?? ""),
-    type: "Apartment" as Property["type"],
-    status: (doc.status as Property["status"]) ?? "available",
-    bedrooms: typeof doc.bedrooms === "number" ? doc.bedrooms : 0,
-    bathrooms: typeof doc.bathrooms === "number" ? doc.bathrooms : 0,
-    areaSqft: typeof doc.areaSize === "number" ? doc.areaSize : 0,
-    yieldPercent: typeof doc.yieldPercent === "number" ? doc.yieldPercent : 0,
-    featured: Boolean(doc.featured),
-    images,
-    createdAt: String(doc.createdAt ?? new Date().toISOString()),
-    updatedAt: String(doc.updatedAt ?? new Date().toISOString()),
-  };
+    CREATE TABLE IF NOT EXISTS property_images (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+      file_path   TEXT    NOT NULL,
+      sort_order  INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_props_status ON properties(status);
+    CREATE INDEX IF NOT EXISTS idx_pimgs_pid    ON property_images(property_id);
+  `);
 }
 
-export async function getProperties(
-  query: PropertyQuery = {},
-): Promise<PaginatedResult<Property>> {
-  const payload = await getPayload();
+// ── Seed ONE admin — never allow registration ────────────────────────────
 
-  const page = Math.max(1, query.page ?? 1);
-  const pageSize = Math.min(48, Math.max(1, query.pageSize ?? 9));
-
-  // Build Payload where clause
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const where: Record<string, any> = {
-    _status: { equals: "published" },
-  };
-
-  if (query.status && query.status !== "all") {
-    where.status = { equals: query.status };
-  }
-  if (query.featured) {
-    where.featured = { equals: true };
-  }
-  if (query.search?.trim()) {
-    where.or = [
-      { title: { contains: query.search.trim() } },
-      { location: { contains: query.search.trim() } },
-      { summary: { contains: query.search.trim() } },
-    ];
-  }
-
-  const result = await payload.find({
-    collection: "properties",
-    where,
-    page,
-    limit: pageSize,
-    sort: "-createdAt",
-    depth: 2, // resolve media relationships
-  });
-
-  const items = result.docs.map((doc) =>
-    toProperty(doc as unknown as Record<string, unknown>),
-  );
-
-  // Featured-first sort client-side (Payload doesn't easily combine multi-sort)
-  items.sort((a, b) => {
-    if (a.featured !== b.featured) return a.featured ? -1 : 1;
-    return 0;
-  });
-
-  return {
-    items,
-    page: result.page ?? page,
-    pageSize,
-    total: result.totalDocs,
-    hasMore: result.hasNextPage,
-  };
+function seedAdmin(db: Database.Database) {
+  const n = (db.prepare("SELECT COUNT(*) as n FROM admins").get() as { n: number }).n;
+  if (n > 0) return;
+  const hash = bcrypt.hashSync("Realstate1234", 12);
+  db.prepare("INSERT INTO admins (email, password_hash) VALUES (?, ?)")
+    .run("mudassirkhan09222@gmail.com", hash);
+  console.log("[db] Admin seeded — mudassirkhan09222@gmail.com / Realstate1234");
 }
 
-export async function getProperty(idOrSlug: string): Promise<Property | null> {
-  const payload = await getPayload();
+// ── Row types ────────────────────────────────────────────────────────────
 
-  // Try by ID first
-  try {
-    const doc = await payload.findByID({
-      collection: "properties",
-      id: idOrSlug,
-      depth: 2,
-    });
-    if (doc) return toProperty(doc as unknown as Record<string, unknown>);
-  } catch {
-    // Not found by ID — fall through to slug search
-  }
-
-  // Try by title-based slug match
-  const result = await payload.find({
-    collection: "properties",
-    where: { title: { equals: idOrSlug } },
-    limit: 1,
-    depth: 2,
-  });
-  const doc = result.docs[0];
-  if (!doc) return null;
-  return toProperty(doc as unknown as Record<string, unknown>);
+export interface AdminRow {
+  id: number; email: string; password_hash: string;
 }
 
-export async function listAllSlugs(): Promise<{ id: string; slug: string }[]> {
-  const payload = await getPayload();
-  const result = await payload.find({
-    collection: "properties",
-    where: { _status: { equals: "published" } },
-    limit: 1000,
-    depth: 0,
-    select: { id: true },
-  });
-  return result.docs.map((doc) => ({
-    id: String(doc.id),
-    slug: String(doc.id),
-  }));
+export interface PropertyRow {
+  id: number; title: string; description: string;
+  price: number; location: string;
+  status: "published" | "draft";
+  created_at: string; updated_at: string;
 }
 
-export async function countProperties(): Promise<number> {
-  const payload = await getPayload();
-  const result = await payload.find({
-    collection: "properties",
-    where: { _status: { equals: "published" } },
-    limit: 1,
-    depth: 0,
-  });
-  return result.totalDocs;
+export interface ImageRow {
+  id: number; property_id: number; file_path: string; sort_order: number;
 }
