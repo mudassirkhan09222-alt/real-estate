@@ -1,40 +1,32 @@
 import type { NextConfig } from "next";
+import { withPayload } from "@payloadcms/next/withPayload";
 
 /**
- * Production CDN hostnames for optimized image delivery.
- * Set in .env (e.g. NEXT_PUBLIC_CDN_HOSTNAME=images.example.com) to allow
- * next/image to optimize/serve assets served from Cloudflare Images / R2 / S3.
+ * NOTE: cacheComponents is DISABLED intentionally.
+ * Payload CMS admin panel has partial incompatibility with Next.js cacheComponents mode.
+ * The public marketing site works identically without it.
  */
-const cdnHostname = process.env.NEXT_PUBLIC_CDN_HOSTNAME?.trim();
-
-type RemotePattern = NonNullable<NonNullable<NextConfig["images"]>["remotePatterns"]>[number];
-
-const remotePatterns: RemotePattern[] = [
-  // Seed/sample imagery (Unsplash) — used only for demo listings.
-  { protocol: "https", hostname: "images.unsplash.com" },
-];
-
-if (cdnHostname) {
-  const host = cdnHostname.startsWith("http") ? new URL(cdnHostname).hostname : cdnHostname;
-  remotePatterns.push({ protocol: "https", hostname: host });
-  // Also allow any subdomain of the configured CDN (e.g. a CDN custom domain).
-  remotePatterns.push({ protocol: "https", hostname: `**.${host}` });
-}
-
 const nextConfig: NextConfig = {
   experimental: {
     agentFeedback: true,
   },
-  cacheComponents: true,
-  partialPrefetching: true,
+  // cacheComponents and partialPrefetching intentionally omitted — incompatible with Payload admin panel
   images: {
-    // AVIF preferred with WebP fallback. Both cached separately by next/image.
+    // AVIF preferred, WebP fallback
     formats: ["image/avif", "image/webp"],
-    // Next.js 16 requires an explicit qualities allowlist.
+    // Next 16 requires explicit qualities allowlist
     qualities: [40, 60, 75, 90],
-    // Keep optimized derivatives on disk for a long time (31 days).
+    // Long-lived cache for optimized derivatives (31 days)
     minimumCacheTTL: 60 * 60 * 24 * 31,
-    remotePatterns,
+    remotePatterns: [
+      // Demo seed imagery from Unsplash
+      { protocol: "https", hostname: "images.unsplash.com" },
+      // Payload serves local uploads from the same origin — no remote pattern needed.
+      // If you move media to a CDN later, add its hostname here.
+      ...(process.env.NEXT_PUBLIC_CDN_HOSTNAME
+        ? [{ protocol: "https" as const, hostname: process.env.NEXT_PUBLIC_CDN_HOSTNAME }]
+        : []),
+    ],
   },
   turbopack: {
     rules: {
@@ -46,4 +38,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withPayload(nextConfig);

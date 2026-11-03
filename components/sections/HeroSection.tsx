@@ -1,164 +1,168 @@
 "use client";
 
-import { useRef, type FormEvent } from "react";
+import { useRef } from "react";
+import Image from "next/image";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
-import { ArrowRight, Search } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
-import { CitySkyline } from "@/components/ui/CitySkyline";
-import { PROPERTY_TYPES, REGIONS } from "@/lib/types";
 
-/**
- * Full-viewport hero. The fixed Navbar is rendered here (inside the hero
- * container, per the brief) and the skyline drifts on a parallax layer as the
- * user scrolls. The search bar dispatches a `property-filter` CustomEvent that
- * the PropertyGrid listens for, then scrolls down to the grid — keeping the two
- * components decoupled while sharing one filter state.
- */
-const STATS = [
-  { value: "120+", label: "Vetted holdings" },
-  { value: "6", label: "Curated regions" },
-  { value: "5.4%", label: "Avg. forecast yield" },
+const BUDGETS = [
+  "PKR 50 Lakh – 1 Crore",
+  "PKR 1 Crore – 3 Crore",
+  "PKR 3 Crore – 5 Crore",
+  "PKR 5 Crore – 10 Crore",
+  "PKR 10 Crore+",
+];
+const GOALS = [
+  "Rental Income", "Sale / Purchase", "Property Transfer", "Lease / Rent", "Investment",
+];
+const COUNTRIES = [
+  "Karachi", "Lahore", "Islamabad", "Rawalpindi", "Hyderabad", "Quetta", "Peshawar",
 ];
 
+/**
+ * Hero section — exact replica of video frame 2:
+ * - Full-viewport Dubai skyline photo (Unsplash aerial night shot)
+ * - Centered giant Cormorant Garamond serif: INVEST / INTERNATIONALLY / TODAY
+ * - Dark semi-transparent glassmorphism filter bar: Country | Budget | Investment Goal
+ * - Cream oval "Explore Properties" button
+ * - Parallax on scroll
+ */
 export function HeroSection() {
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const yBg = useTransform(scrollYProgress, [0, 1], ["0%", reduce ? "0%" : "22%"]);
-  const ySky = useTransform(scrollYProgress, [0, 1], ["0%", reduce ? "0%" : "14%"]);
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", reduce ? "0%" : "25%"]);
+  const contentY = useTransform(scrollYProgress, [0, 0.8], [0, reduce ? 0 : -50]);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
-  const contentY = useTransform(scrollYProgress, [0, 0.75], [0, reduce ? 0 : -40]);
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const detail = {
-      region: String(fd.get("region") ?? "all"),
-      type: String(fd.get("type") ?? "all"),
-      search: String(fd.get("search") ?? ""),
-    };
-    window.dispatchEvent(new CustomEvent("property-filter", { detail }));
-    document.getElementById("properties")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const onExplore = () => {
+    document.getElementById("properties")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
-    <section ref={ref} className="relative min-h-[100svh] overflow-hidden bg-espresso-950">
-      {/* Warm horizon gradient */}
-      <motion.div style={{ y: yBg }} className="absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_-10%,#2a211b_0%,#1c1612_45%,#120d0a_100%)]" />
+    <section
+      ref={ref}
+      className="relative h-screen min-h-[600px] overflow-hidden"
+      aria-label="Hero — Invest Internationally Today"
+    >
+      {/* ── Dubai skyline background ── */}
+      <motion.div style={{ y: bgY }} className="absolute inset-0 scale-[1.12]">
+        <Image
+          src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=2070&q=90"
+          alt="Dubai skyline at dusk"
+          fill
+          className="object-cover object-center"
+          preload
+          sizes="100vw"
+        />
+        {/* Dark overlay — matches video's moody blue-brown tint */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/60" />
       </motion.div>
 
-      {/* Parallax skyline near the base */}
-      <motion.div
-        style={{ y: ySky }}
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] opacity-90"
-      >
-        <CitySkyline />
-      </motion.div>
-
-      {/* Bottom fade into the page */}
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-cream-50 to-transparent" />
-
+      {/* ── Navbar lives inside hero ── */}
       <Navbar />
 
+      {/* ── Main content ── */}
       <motion.div
-        style={{ opacity: contentOpacity, y: contentY }}
-        className="container-luxe relative z-10 flex min-h-[100svh] flex-col justify-center pb-28 pt-32"
+        style={{ y: contentY, opacity: contentOpacity }}
+        className="relative z-10 flex h-full flex-col items-center justify-center px-4 pb-28 pt-40 text-center"
       >
-        <motion.span
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.05 }}
-          className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-cream-200/15 px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.28em] text-cream-200/80"
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-gold-500" />
-          International property investments
-        </motion.span>
-
-        <h1 className="font-serif text-cream-50 leading-[0.95]">
+        {/* Giant heading */}
+        <div className="select-none">
           {["INVEST", "INTERNATIONALLY", "TODAY"].map((word, i) => (
-            <motion.span
+            <motion.div
               key={word}
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.15 + i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-              className="block text-[2.75rem] sm:text-6xl md:text-7xl lg:text-[5.5rem]"
+              transition={{ duration: 1, delay: 0.2 + i * 0.15, ease: "easeOut" }}
+              className="block leading-none text-white"
+              style={{
+                fontFamily: "var(--font-cormorant)",
+                fontWeight: 400,
+                fontStyle: i === 1 ? "italic" : "normal",
+                fontSize: "clamp(3.5rem, 11vw, 9rem)",
+                letterSpacing: "0.01em",
+              }}
             >
               {word}
-            </motion.span>
+            </motion.div>
           ))}
-        </h1>
+        </div>
 
-        <motion.p
+        {/* Filter bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.75 }}
+          className="mt-10 w-full max-w-2xl overflow-hidden rounded-xl"
+          style={{ background: "rgba(28,18,8,0.72)", backdropFilter: "blur(14px)", border: "1px solid rgba(255,255,255,0.08)" }}
+        >
+          <div className="grid grid-cols-1 divide-y divide-white/10 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <FilterCol label="CITY" defaultValue="Karachi" options={COUNTRIES} />
+            <FilterCol label="BUDGET" defaultValue="PKR 1 Crore – 3 Crore" options={BUDGETS} />
+            <FilterCol label="INVESTMENT GOAL" defaultValue="Rental Income" options={GOALS} />
+          </div>
+        </motion.div>
+
+        {/* CTA button */}
+        <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.5 }}
-          className="mt-7 max-w-xl text-base leading-relaxed text-cream-200/70"
+          transition={{ duration: 0.7, delay: 1 }}
+          onClick={onExplore}
+          className="pill-btn-cream mt-7"
+          style={{ paddingInline: "52px", paddingBlock: "14px" }}
         >
-          Access vetted, investment-grade real estate across curated regions —
-          with transparent yield forecasts and protected tenure on every holding.
-        </motion.p>
+          Explore Properties
+        </motion.button>
+      </motion.div>
 
-        {/* Search filters */}
-        <motion.form
-          onSubmit={onSubmit}
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.65 }}
-          className="mt-10 grid w-full max-w-3xl grid-cols-1 gap-3 rounded-2xl border border-cream-200/12 bg-espresso-900/50 p-3 backdrop-blur-md sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_auto]"
-        >
-          <div className="relative">
-            <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-cream-200/50" />
-            <input
-              name="search"
-              type="search"
-              placeholder="Search by title or location…"
-              className="w-full rounded-xl border border-cream-200/10 bg-espresso-950/40 px-11 py-3 text-sm text-cream-50 outline-none transition-colors placeholder:text-cream-200/40 focus:border-gold-500"
-            />
-          </div>
-          <select
-            name="region"
-            defaultValue="all"
-            className="rounded-xl border border-cream-200/10 bg-espresso-950/40 px-4 py-3 text-sm text-cream-50 outline-none transition-colors focus:border-gold-500"
-          >
-            <option value="all" className="bg-espresso-900">All regions</option>
-            {REGIONS.map((r) => (
-              <option key={r} value={r} className="bg-espresso-900">{r}</option>
-            ))}
-          </select>
-          <select
-            name="type"
-            defaultValue="all"
-            className="rounded-xl border border-cream-200/10 bg-espresso-950/40 px-4 py-3 text-sm text-cream-50 outline-none transition-colors focus:border-gold-500"
-          >
-            <option value="all" className="bg-espresso-900">All types</option>
-            {PROPERTY_TYPES.map((t) => (
-              <option key={t} value={t} className="bg-espresso-900">{t}</option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gold-500 px-6 py-3 text-sm font-medium text-espresso-950 transition-colors hover:bg-gold-400"
-          >
-            Search <ArrowRight size={16} />
-          </button>
-        </motion.form>
-
-        {/* Stat strip */}
+      {/* ── Scroll cue ── */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.5 }}
+        className="absolute bottom-7 left-1/2 -translate-x-1/2 z-10"
+      >
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.85 }}
-          className="mt-12 flex flex-wrap gap-x-12 gap-y-6"
+          animate={{ y: [0, 8, 0] }}
+          transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
         >
-          {STATS.map((s) => (
-            <div key={s.label}>
-              <p className="font-serif text-3xl text-cream-50">{s.value}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.18em] text-cream-200/50">{s.label}</p>
-            </div>
-          ))}
+          <ChevronDown size={22} className="text-white/50" />
         </motion.div>
       </motion.div>
     </section>
+  );
+}
+
+/* ─────────────────────────────────────────── */
+function FilterCol({
+  label,
+  defaultValue,
+  options,
+}: {
+  label: string;
+  defaultValue: string;
+  options: string[];
+}) {
+  return (
+    <div className="relative px-5 py-4">
+      <p className="text-[10px] font-medium tracking-[0.2em] text-white/50">{label}</p>
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <select
+          defaultValue={defaultValue}
+          className="w-full bg-transparent text-[15px] font-light text-white outline-none cursor-pointer appearance-none"
+          style={{ fontFamily: "var(--font-cormorant)" }}
+        >
+          {options.map((o) => (
+            <option key={o} value={o} className="bg-[#1C1208] text-white">
+              {o}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={14} className="shrink-0 text-white/50" />
+      </div>
+    </div>
   );
 }

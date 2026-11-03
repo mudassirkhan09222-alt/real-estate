@@ -1,107 +1,242 @@
 "use client";
 
-import { useRef } from "react";
-import { ChevronLeft, ChevronRight, ShieldCheck, Landmark, FileSearch, Lock, Scale } from "lucide-react";
-import { AnimatedSection } from "@/components/ui/AnimatedSection";
-import { SectionHeading } from "@/components/ui/SectionHeading";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import type { Variants } from "framer-motion";
+import { AnimatedDecoLine } from "@/components/ui/AnimatedDecoLine";
+
+const mkVariants = (delay = 0): Variants => ({
+  hidden: { opacity: 0, y: 40 },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.85, delay } },
+});
+const VP = { once: true as const, margin: "-80px" as const };
 
 const CARDS = [
   {
-    icon: ShieldCheck,
-    title: "Title Insurance",
-    body: "Every holding transfers with insured, clean title — verified before you commit capital.",
+    num: "01",
+    title: "Property\nDiscovery",
+    img: "https://images.unsplash.com/photo-1613490493576-7fde63acd581?auto=format&fit=crop&w=600&q=80",
+    alt: "Luxury villa pool",
   },
   {
-    icon: Landmark,
-    title: "Escrow Protection",
-    body: "Funds sit in regulated escrow and release only when contract milestones are met.",
+    num: "02",
+    title: "Online\nViewing",
+    img: "https://images.unsplash.com/photo-1571055107559-3e67626fa8be?auto=format&fit=crop&w=600&q=80",
+    alt: "Architectural columns lake view",
   },
   {
-    icon: FileSearch,
-    title: "Due Diligence",
-    body: "Independent legal, structural, and tenure reviews are completed for each listing.",
+    num: null,          // center brand card — no number
+    title: "Secure\nTransaction",
+    img: null,          // no photo — ES monogram
+    alt: "",
+    isCenter: true,
   },
   {
-    icon: Lock,
-    title: "Capital Security",
-    body: "Vetted holding structures are designed to preserve capital across market cycles.",
+    num: "03",
+    title: "Legal\nVerification",
+    img: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=600&q=80",
+    alt: "Modern interior legal meeting",
   },
   {
-    icon: Scale,
-    title: "Local Counsel",
-    body: "On-ground legal partners in each region guide you through local requirements.",
+    num: "04",
+    title: "Title\nTransfer",
+    img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=600&q=80",
+    alt: "Dubai skyline aerial",
   },
 ];
 
 export function InvestmentsProtected() {
-  const trackRef = useRef<HTMLDivElement>(null);
-
-  const scrollBy = (dir: 1 | -1) => {
-    const el = trackRef.current;
-    if (!el) return;
-    const cardWidth = el.querySelector("[data-card]")?.getBoundingClientRect().width ?? 320;
-    el.scrollBy({ left: dir * (cardWidth + 24), behavior: "smooth" });
-  };
-
   return (
-    <section id="protected" className="bg-cream-100 py-24 scroll-mt-24">
-      <div className="container-luxe">
-        <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-          <AnimatedSection>
-            <SectionHeading
-              eyebrow="Investments Protected"
-              title="Five layers of protection on every holding"
-              subtitle="Acquiring international property shouldn't feel like a leap. Each listing moves through a structured protection process before it reaches you."
-            />
-          </AnimatedSection>
-          <div className="hidden gap-2 md:flex">
-            <button
-              type="button"
-              aria-label="Previous"
-              onClick={() => scrollBy(-1)}
-              className="grid h-11 w-11 place-items-center rounded-full border border-espresso-900/10 text-espresso-800 transition-colors hover:bg-cream-50"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              type="button"
-              aria-label="Next"
-              onClick={() => scrollBy(1)}
-              className="grid h-11 w-11 place-items-center rounded-full border border-espresso-900/10 text-espresso-800 transition-colors hover:bg-cream-50"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        </div>
-      </div>
+    <section
+      id="how-it-works"
+      className="overflow-hidden scroll-mt-16"
+      style={{ backgroundColor: "#FAF6EF" }}
+    >
+      <div className="estatio-container py-20 md:py-28">
 
-      <AnimatedSection delay={0.05} className="mt-12">
-        <div
-          ref={trackRef}
-          className="container-luxe flex snap-x snap-mandatory gap-6 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        {/* ── Heading ── */}
+        <motion.div variants={mkVariants(0)} initial="hidden" whileInView="show" viewport={VP} className="mb-16 text-center">
+          {/* Row 1: deco line + script "Investments" + deco line */}
+          <div className="flex items-center justify-center gap-0">
+            <AnimatedDecoLine delay={0.15} />
+            <span
+              className="px-6 leading-none text-[#1C1208]"
+              style={{
+                fontFamily: "var(--font-cormorant)",
+                fontStyle: "italic",
+                fontWeight: 400,
+                fontSize: "clamp(2.8rem, 7vw, 6rem)",
+                letterSpacing: "0.01em",
+              }}
+            >
+              Investments
+            </span>
+            <AnimatedDecoLine flip delay={0.15} />
+          </div>
+
+          {/* Row 2: PROTECTED with diamond-O */}
+          <div className="flex items-center justify-center gap-0 mt-1">
+            <AnimatedDecoLine delay={0.15} />
+            <span
+              className="px-6 leading-none text-[#1C1208]"
+              style={{
+                fontFamily: "var(--font-cormorant)",
+                fontWeight: 700,
+                fontSize: "clamp(2.8rem, 7vw, 6rem)",
+                letterSpacing: "0.02em",
+                textTransform: "uppercase",
+              }}
+            >
+              PR
+              {/* Diamond O as seen in video */}
+              <span className="relative inline-block" style={{ width: "0.6em" }}>
+                <span style={{ opacity: 0 }}>O</span>
+                <span className="absolute inset-0 flex items-center justify-center text-[#1C1208]">
+                  ◈
+                </span>
+              </span>
+              TECTED
+            </span>
+            <AnimatedDecoLine flip delay={0.15} />
+          </div>
+        </motion.div>
+
+        {/* ── 5 arch cards ── */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="flex items-end justify-center gap-3 md:gap-4"
         >
-          {CARDS.map((c, i) => {
-            const Icon = c.icon;
-            return (
-              <article
-                key={c.title}
-                data-card
-                className="group relative flex min-w-[280px] flex-1 snap-start flex-col rounded-2xl border border-espresso-900/8 bg-cream-50 p-7 transition-all duration-500 hover:-translate-y-1 hover:shadow-luxe md:min-w-0"
-                style={{ flexBasis: `calc((100% - 4 * 1.5rem) / 5)` }}
-              >
-                <span className="font-serif text-4xl text-cream-300 transition-colors group-hover:text-gold-400">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span className="mt-6 grid h-12 w-12 place-items-center rounded-full bg-espresso-900 text-gold-400">
-                  <Icon size={22} />
-                </span>
-                <h3 className="mt-5 font-serif text-xl text-espresso-900">{c.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted">{c.body}</p>
-              </article>
-            );
-          })}
-        </div>
-      </AnimatedSection>
+          {CARDS.map((card, i) => (
+            <motion.div
+              key={card.title}
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.7, delay: i * 0.1, ease: "easeOut" }}
+              className="flex flex-col"
+            >
+              <ArchCard card={card} />
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* ── Discover button ── */}
+        <motion.div variants={mkVariants(0.3)} initial="hidden" whileInView="show" viewport={VP} className="mt-12 flex justify-center">
+          <button className="pill-btn-dark" style={{ paddingInline: "48px", paddingBlock: "13px" }}>
+            Discover
+          </button>
+        </motion.div>
+
+      </div>
     </section>
   );
 }
+
+/* ─── Arch-shaped card ─────────────────── */
+function ArchCard({ card }: { card: typeof CARDS[number] }) {
+  const isCenter = (card as { isCenter?: boolean }).isCenter;
+
+  return (
+    <div
+      className="relative flex flex-col overflow-hidden transition-transform duration-500 hover:-translate-y-2"
+      style={{
+        width: isCenter ? "clamp(130px,14vw,190px)" : "clamp(110px,12vw,165px)",
+        height: isCenter ? "clamp(240px,28vw,370px)" : "clamp(200px,22vw,300px)",
+        border: "1.5px solid rgba(28,18,8,0.2)",
+        borderRadius: "999px 999px 18px 18px",
+        background: "#FAF6EF",
+        marginBottom: isCenter ? 0 : "clamp(16px,3vw,40px)",
+      }}
+    >
+      {/* Number badge */}
+      {card.num && (
+        <span
+          className="absolute top-3 left-0 right-0 text-center"
+          style={{
+            fontFamily: "var(--font-inter)",
+            fontSize: 11,
+            fontWeight: 500,
+            letterSpacing: "0.12em",
+            color: "rgba(28,18,8,0.45)",
+          }}
+        >
+          {card.num}
+        </span>
+      )}
+
+      {/* Photo or ES monogram */}
+      {card.img ? (
+        <div
+          className="relative overflow-hidden"
+          style={{
+            flex: "0 0 55%",
+            borderRadius: "999px 999px 0 0",
+          }}
+        >
+          <Image
+            src={card.img}
+            alt={card.alt}
+            fill
+            className="object-cover"
+            sizes="180px"
+          />
+        </div>
+      ) : (
+        <div
+          className="flex items-center justify-center"
+          style={{ flex: "0 0 55%", borderRadius: "999px 999px 0 0" }}
+        >
+          <span
+            className="text-[#1C1208]"
+            style={{
+              fontFamily: "var(--font-cormorant)",
+              fontWeight: 400,
+              fontSize: "clamp(2rem, 4vw, 3.2rem)",
+              letterSpacing: "0.08em",
+            }}
+          >
+            ES
+          </span>
+        </div>
+      )}
+
+      {/* Label */}
+      <div
+        className="flex flex-1 flex-col items-center justify-center px-3 text-center"
+      >
+        <p
+          className="whitespace-pre-line text-[#1C1208]"
+          style={{
+            fontFamily: "var(--font-cormorant)",
+            fontWeight: 500,
+            fontSize: "clamp(0.9rem, 1.6vw, 1.2rem)",
+            lineHeight: 1.25,
+          }}
+        >
+          {card.title}
+        </p>
+        {isCenter && (
+          <p
+            className="mt-2"
+            style={{
+              fontFamily: "var(--font-inter)",
+              fontSize: 9,
+              fontWeight: 500,
+              letterSpacing: "0.18em",
+              color: "rgba(28,18,8,0.45)",
+              textTransform: "uppercase",
+            }}
+          >
+            ACCESS VERIFIED{"\n"}PREMIUM PROPERTIES
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+
