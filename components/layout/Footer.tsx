@@ -51,14 +51,14 @@ export function Footer() {
           <div className="sm:col-span-2 md:col-span-1 flex flex-col items-center gap-5">
 
             {/* Logo — bigger, centered */}
-            <Link href="/" className="inline-block -mt-6">
-              <div className="relative h-40 w-64 overflow-hidden">
+            <Link href="/" className="inline-block -mt-16">
+           <div className="relative h-48 w-72 sm:h-60 sm:w-88 md:h-72 md:w-[28rem] overflow-hidden">
                 <Image
-                  src="/Real_state_Logo.png"
+                  src="/Real Logo.png"
                   alt="Warsi Jee Construction Company"
                   fill
                   className="object-contain object-center"
-                  sizes="256px"
+                  sizes="(max-width: 640px) 288px, (max-width: 768px) 352px, 448px"
                 />
               </div>
             </Link>
@@ -139,5 +139,6 @@ function FooterCol({ col }: { col: { heading: string; links: { label: string; hr
         ))}
       </ul>
     </div>
+
   );
 }

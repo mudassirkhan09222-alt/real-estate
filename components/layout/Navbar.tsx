@@ -49,13 +49,13 @@ export function Navbar({ forceSolid = false }: { forceSolid?: boolean }) {
 
         {/* ── Logo only (name is inside the logo image) ── */}
         <Link href="/" className="shrink-0">
-          <div className="relative h-20 w-44 overflow-hidden">
+          <div className="relative h-28 w-56 overflow-hidden">
             <Image
-              src="/Real_state_Logo.png"
+              src="/Real Logo.png"
               alt="Warsi Jee Construction Company"
               fill
               className="object-contain object-left"
-              sizes="176px"
+              sizes="276px"
               priority
             />
           </div>
