@@ -65,13 +65,12 @@ export function PropertyCard({ property }: { property: Property }) {
           </h3>
           <p className="mt-1 text-sm text-muted">{property.location}</p>
 
-          {/* Price — prominent, bold, below title */}
+          {/* Price — prominent, bold */}
           <p className="mt-3 text-[1.35rem] font-bold leading-tight text-espresso-900">
-            {property.currency}&nbsp;
             <span className="text-gold-600">
               {property.price > 0
                 ? formatCompactPrice(property.price, property.currency)
-                : "—"}
+                : `${property.currency} —`}
             </span>
           </p>
 
@@ -85,14 +84,6 @@ export function PropertyCard({ property }: { property: Property }) {
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Maximize2 size={14} className="text-gold-600" /> {formatNumber(property.areaSqft)} ft²
-            </span>
-          </div>
-
-          {/* Divider + yield */}
-          <div className="mt-4 flex items-center justify-between border-t border-espresso-900/5 pt-4">
-            <span className="text-sm text-muted">Forecast yield</span>
-            <span className="font-serif text-lg text-gold-600">
-              {property.yieldPercent.toFixed(1)}%
             </span>
           </div>
         </div>

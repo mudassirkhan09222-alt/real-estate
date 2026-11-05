@@ -106,12 +106,25 @@ async function PropertyDetail({ params }: { params: Promise<{ id: string }> }) {
               )}
 
               <div className="mt-6 flex flex-col gap-3">
-                <Link href="/#forecast" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#1C1208] px-5 py-3 text-sm font-medium text-[#FAF6EF] hover:bg-[#2C1A0E]">
-                  Model this yield <TrendingUp size={15} />
-                </Link>
-                <Link href="/#contact" className="inline-flex items-center justify-center rounded-full border border-[rgba(28,18,8,0.1)] px-5 py-3 text-sm text-[#1C1208] hover:bg-[#FAF6EF]">
-                  Contact us
-                </Link>
+                <a
+                  href="https://wa.me/923122249346"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white"
+                  style={{ background: "#25D366" }}
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                    <path d="M12 0C5.374 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.828L.057 23.776a.5.5 0 0 0 .614.637l6.071-1.525A11.935 11.935 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.655-.511-5.178-1.401l-.37-.22-3.833.963.98-3.77-.241-.388A9.933 9.933 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                  </svg>
+                  Contact us on WhatsApp
+                </a>
+                <a
+                  href="tel:+923122249346"
+                  className="inline-flex items-center justify-center rounded-full border border-[rgba(28,18,8,0.1)] px-5 py-3 text-sm text-[#1C1208] hover:bg-[#F2ECE1]"
+                >
+                  📞 0312-2249346
+                </a>
               </div>
 
               <p className="mt-5 flex items-center gap-2 text-xs text-[#7A6652]">
