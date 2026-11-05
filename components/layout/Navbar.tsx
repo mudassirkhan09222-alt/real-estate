@@ -15,11 +15,11 @@ const InstagramSVG = () => (
 );
 
 const NAV_LINKS = [
-  { label: "PROPERTIES", href: "#properties" },
+  { label: "PROPERTIES",   href: "#properties" },
   { label: "HOW IT WORKS", href: "#how-it-works" },
-  { label: "SERVICES", href: "#services" },
-  { label: "TERMS", href: "#terms" },
-  { label: "CONTACT", href: "#contact" },
+  { label: "SERVICES",     href: "#services" },
+  { label: "TERMS",        href: "#terms" },
+  { label: "CONTACT",      href: "https://wa.me/923122249346", external: true },
 ];
 
 export function Navbar({ forceSolid = false }: { forceSolid?: boolean }) {
@@ -67,6 +67,8 @@ export function Navbar({ forceSolid = false }: { forceSolid?: boolean }) {
             <a
               key={l.href}
               href={l.href}
+              target={(l as { external?: boolean }).external ? "_blank" : undefined}
+              rel={(l as { external?: boolean }).external ? "noreferrer" : undefined}
               className="rounded-full px-5 py-2 text-[12px] font-bold tracking-[0.12em] transition-all duration-200 hover:opacity-80"
               style={{
                 background: "#FAF6EF",
@@ -92,9 +94,12 @@ export function Navbar({ forceSolid = false }: { forceSolid?: boolean }) {
             <InstagramSVG />
           </a>
           <a
-            href="#contact"
+            href="https://wa.me/923122249346"
+            target="_blank"
+            rel="noreferrer"
             className="rounded-full px-5 py-2 text-[12px] font-bold tracking-[0.1em] transition-all hover:opacity-80"
-            style={{ background: "#FAF6EF", color: "#1C1208", fontFamily: "var(--font-inter)" }}
+            style={{ background: "#25D366", color: "#fff", fontFamily: "var(--font-inter)" }}
+            aria-label="Contact on WhatsApp"
           >
             CONTACT US
           </a>
@@ -129,15 +134,20 @@ export function Navbar({ forceSolid = false }: { forceSolid?: boolean }) {
                   key={l.href}
                   href={l.href}
                   onClick={() => setOpen(false)}
+                  target={(l as { external?: boolean }).external ? "_blank" : undefined}
+                  rel={(l as { external?: boolean }).external ? "noreferrer" : undefined}
                   className="rounded-lg px-3 py-3 text-sm tracking-widest text-white/70 hover:bg-white/5 hover:text-white"
                 >
                   {l.label}
                 </a>
               ))}
               <a
-                href="#contact"
+                href="https://wa.me/923122249346"
+                target="_blank"
+                rel="noreferrer"
                 onClick={() => setOpen(false)}
-                className="mt-2 rounded-full bg-white/10 px-4 py-3 text-center text-sm tracking-widest text-white"
+                className="mt-2 rounded-full px-4 py-3 text-center text-sm tracking-widest text-white font-bold"
+                style={{ background: "#25D366" }}
               >
                 CONTACT US
               </a>

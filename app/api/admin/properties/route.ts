@@ -41,11 +41,12 @@ export async function POST(req: NextRequest) {
   const title = String(form.get("title") ?? "").trim();
   if (!title) return NextResponse.json({ error: "title required" }, { status: 422, headers: NS });
 
-  const description = String(form.get("description") ?? "");
-  const price = Number(form.get("price") ?? 0);
-  const location = String(form.get("location") ?? "");
-  const status = form.get("status") === "published" ? "published" : "draft";
-  const now = new Date().toISOString();
+  const description  = String(form.get("description") ?? "");
+  const price        = Number(form.get("price") ?? 0);
+  const location     = String(form.get("location") ?? "");
+  const status       = form.get("status") === "published" ? "published" : "draft";
+  const availability = form.get("availability") === "sold_out" ? "sold_out" : "available";
+  const now          = new Date().toISOString();
 
   const db = getDB();
 
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
   let base = slug(title); let sl = base; let n = 1;
   while (db.prepare("SELECT id FROM properties WHERE title = ?").get(sl)) sl = `${base}-${++n}`;
 
-  const r = db.prepare(`INSERT INTO properties (title,description,price,location,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?)`).run(title, description, price, location, status, now, now);
+  const r = db.prepare(`INSERT INTO properties (title,description,price,location,status,availability,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)`).run(title, description, price, location, status, availability, now, now);
   const pid = Number(r.lastInsertRowid);
 
   const files = form.getAll("images").filter((f): f is File => f instanceof File);

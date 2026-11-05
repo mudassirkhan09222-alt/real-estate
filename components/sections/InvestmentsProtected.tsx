@@ -15,33 +15,33 @@ const CARDS = [
   {
     num: "01",
     title: "Property\nDiscovery",
-    img: "https://images.unsplash.com/photo-1613490493576-7fde63acd581?auto=format&fit=crop&w=600&q=80",
-    alt: "Luxury villa pool",
+    img: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80",
+    alt: "Luxury villa exterior",
   },
   {
     num: "02",
     title: "Online\nViewing",
-    img: "https://images.unsplash.com/photo-1571055107559-3e67626fa8be?auto=format&fit=crop&w=600&q=80",
-    alt: "Architectural columns lake view",
+    img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80",
+    alt: "Modern house architecture",
   },
   {
     num: null,          // center brand card — no number
     title: "Secure\nTransaction",
-    img: null,          // no photo — ES monogram
-    alt: "",
+    img: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80",
+    alt: "Secure property handover keys",
     isCenter: true,
   },
   {
     num: "03",
     title: "Legal\nVerification",
-    img: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=600&q=80",
-    alt: "Modern interior legal meeting",
+    img: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=600&q=80",
+    alt: "Modern interior living room",
   },
   {
     num: "04",
     title: "Title\nTransfer",
-    img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=600&q=80",
-    alt: "Dubai skyline aerial",
+    img: "https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=600&q=80",
+    alt: "City skyline aerial view",
   },
 ];
 

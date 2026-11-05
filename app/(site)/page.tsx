@@ -22,6 +22,7 @@ function getInitialProperties(): PaginatedResult<Property> {
         price: row.price, currency: "PKR", region: "Metropolitan" as const, location: row.location,
         type: "Apartment" as const, status: "available" as const,
         bedrooms: 0, bathrooms: 0, areaSqft: 0, yieldPercent: 0, featured: false,
+        availability: row.availability ?? "available",
         images: imgs.map(i => ({ id: String(i.id), url: i.file_path, blurDataURL: undefined, alt: row.title, width: 800, height: 600 })),
         createdAt: row.created_at, updatedAt: row.updated_at,
       };

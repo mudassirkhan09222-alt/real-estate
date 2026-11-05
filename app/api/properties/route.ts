@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
       price: row.price, currency: "PKR", region: "Metropolitan", location: row.location,
       type: "Apartment", status: "available", bedrooms: 0, bathrooms: 0, areaSqft: 0,
       yieldPercent: 0, featured: false,
+      availability: row.availability ?? "available",
       images: imgs.map(i => ({ id: String(i.id), url: i.file_path, alt: row.title, width: 800, height: 600 })),
       createdAt: row.created_at, updatedAt: row.updated_at,
     };

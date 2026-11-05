@@ -5,44 +5,81 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 
 const NAV = [
-  { href: "/admin",                  icon: "⬡", label: "Overview"    },
-  { href: "/admin/products",         icon: "🏠", label: "Properties"  },
-  { href: "/admin/products/new",     icon: "＋", label: "Add Property" },
+  { href: "/admin",              icon: "⊞",  label: "Overview"     },
+  { href: "/admin/products",     icon: "📦", label: "Products"     },
+  { href: "/admin/products/new", icon: "+",  label: "Add Product"  },
+  { href: "/admin/categories",   icon: "⊟",  label: "Categories"   },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const router   = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+
+  if (pathname === "/admin/login") return <>{children}</>;
 
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST" });
     router.replace("/admin/login");
   }
 
-  // Login page uses its own full-screen layout — no sidebar
-  if (pathname === "/admin/login") return <>{children}</>;
-
-  const W = collapsed ? 64 : 230;
+  const W = collapsed ? 68 : 220;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "system-ui,sans-serif", background: "#0c0c0c" }}>
+    <div style={{
+      display: "flex", minHeight: "100vh",
+      fontFamily: "'Inter',system-ui,sans-serif",
+      background: "#f1f5f9",
+    }}>
       {/* ── Sidebar ── */}
-      <aside style={{ width: W, background: "#111", borderRight: "1px solid #1e1e1e", display: "flex", flexDirection: "column", flexShrink: 0, transition: "width .2s", overflow: "hidden" }}>
+      <aside style={{
+        width: W, flexShrink: 0,
+        background: "#1e2a3b",
+        display: "flex", flexDirection: "column",
+        transition: "width .22s cubic-bezier(.4,0,.2,1)",
+        overflow: "hidden",
+        position: "sticky", top: 0, height: "100vh",
+      }}>
         {/* Brand */}
-        <div style={{ padding: "18px 14px", display: "flex", alignItems: "center", gap: 10, borderBottom: "1px solid #1e1e1e", minHeight: 68 }}>
-          <Image src="/Real_state_Logo.png" alt="Logo" width={32} height={32} style={{ objectFit: "contain", flexShrink: 0 }} />
-          {!collapsed && <span style={{ color: "#fff", fontWeight: 700, fontSize: 14, whiteSpace: "nowrap" }}>Warsi CMS</span>}
-          <button onClick={() => setCollapsed(v => !v)} style={{ marginLeft: "auto", background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 16, flexShrink: 0 }}>{collapsed ? "›" : "‹"}</button>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "20px 16px 18px",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          minHeight: 72,
+        }}>
+          <div style={{ position: "relative", width: 36, height: 36, flexShrink: 0 }}>
+            <Image src="/Real_state_Logo.png" alt="Logo" fill style={{ objectFit: "contain" }} sizes="36px" />
+          </div>
+          {!collapsed && (
+            <span style={{ color: "#fff", fontWeight: 700, fontSize: 15, whiteSpace: "nowrap", letterSpacing: "0.01em" }}>
+              Warsi CMS
+            </span>
+          )}
+          <button
+            onClick={() => setCollapsed(v => !v)}
+            style={{ marginLeft: "auto", background: "none", border: "none", color: "rgba(255,255,255,0.45)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 4, flexShrink: 0 }}
+            aria-label="Toggle sidebar"
+          >
+            {collapsed ? "›" : "‹"}
+          </button>
         </div>
 
-        {/* Nav */}
+        {/* Nav links */}
         <nav style={{ flex: 1, padding: "12px 8px" }}>
           {NAV.map(n => {
-            const active = n.href === "/admin" ? pathname === "/admin" : pathname.startsWith(n.href);
+            const active = n.href === "/admin"
+              ? pathname === "/admin"
+              : pathname.startsWith(n.href);
             return (
-              <Link key={n.href} href={n.href} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 9, marginBottom: 3, background: active ? "#1c1c1c" : "transparent", color: active ? "#C8A96E" : "#777", textDecoration: "none", fontSize: 14, whiteSpace: "nowrap", transition: "background .15s" }}>
-                <span style={{ fontSize: 17, flexShrink: 0 }}>{n.icon}</span>
+              <Link key={n.href} href={n.href} style={{
+                display: "flex", alignItems: "center", gap: 11,
+                padding: "9px 12px", borderRadius: 8, marginBottom: 2,
+                background: active ? "rgba(255,255,255,0.12)" : "transparent",
+                color: active ? "#fff" : "rgba(255,255,255,0.6)",
+                textDecoration: "none", fontSize: 14, fontWeight: active ? 600 : 400,
+                whiteSpace: "nowrap", transition: "background .15s, color .15s",
+              }}>
+                <span style={{ fontSize: 16, flexShrink: 0, width: 20, textAlign: "center" }}>{n.icon}</span>
                 {!collapsed && n.label}
               </Link>
             );
@@ -50,20 +87,54 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         {/* Bottom */}
-        <div style={{ padding: "10px 8px", borderTop: "1px solid #1e1e1e" }}>
-          <a href="/" target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 9, color: "#666", textDecoration: "none", fontSize: 13, marginBottom: 2, whiteSpace: "nowrap" }}>
-            <span>🌐</span>{!collapsed && " View Site"}
+        <div style={{ padding: "10px 8px 16px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <a href="/" target="_blank" rel="noreferrer" style={{
+            display: "flex", alignItems: "center", gap: 11, padding: "9px 12px",
+            borderRadius: 8, color: "rgba(255,255,255,0.55)", textDecoration: "none",
+            fontSize: 13, marginBottom: 2, whiteSpace: "nowrap",
+          }}>
+            <span style={{ fontSize: 15, flexShrink: 0, width: 20, textAlign: "center" }}>↗</span>
+            {!collapsed && "View Website"}
           </a>
-          <button onClick={logout} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", borderRadius: 9, background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: 13, whiteSpace: "nowrap" }}>
-            <span>⏻</span>{!collapsed && " Sign Out"}
+          <button onClick={logout} style={{
+            display: "flex", alignItems: "center", gap: 11, width: "100%",
+            padding: "9px 12px", borderRadius: 8,
+            background: "none", border: "none",
+            color: "rgba(255,255,255,0.55)", cursor: "pointer",
+            fontSize: 13, whiteSpace: "nowrap",
+          }}>
+            <span style={{ fontSize: 15, flexShrink: 0, width: 20, textAlign: "center" }}>⏻</span>
+            {!collapsed && "Sign out"}
           </button>
+
+          {!collapsed && (
+            <p style={{
+              color: "rgba(255,255,255,0.3)", fontSize: 11,
+              margin: "12px 12px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            }}>mudassirkhan09222@gmail.com</p>
+          )}
         </div>
       </aside>
 
-      {/* ── Main ── */}
-      <main style={{ flex: 1, overflow: "auto", padding: "36px 40px", color: "#fff" }}>
-        {children}
-      </main>
+      {/* ── Main content ── */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {/* Top bar */}
+        <header style={{
+          background: "#fff", borderBottom: "1px solid #e2e8f0",
+          padding: "0 32px", height: 56,
+          display: "flex", alignItems: "center", justifyContent: "flex-end",
+          flexShrink: 0,
+        }}>
+          <span style={{ color: "#64748b", fontSize: 13 }}>
+            Signed in as{" "}
+            <strong style={{ color: "#1e293b", fontWeight: 600 }}>mudassirkhan09222@gmail.com</strong>
+          </span>
+        </header>
+
+        <main style={{ flex: 1, overflow: "auto", padding: "32px 36px" }}>
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

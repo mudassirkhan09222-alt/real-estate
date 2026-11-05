@@ -40,6 +40,8 @@ function createTables(db: Database.Database) {
       location    TEXT    NOT NULL DEFAULT '',
       status      TEXT    NOT NULL DEFAULT 'draft'
                   CHECK(status IN ('published','draft')),
+      availability TEXT   NOT NULL DEFAULT 'available'
+                  CHECK(availability IN ('available','sold_out')),
       created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
       updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
     );
@@ -54,6 +56,13 @@ function createTables(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_props_status ON properties(status);
     CREATE INDEX IF NOT EXISTS idx_pimgs_pid    ON property_images(property_id);
   `);
+
+  // Idempotent migration: add availability column if it doesn't exist yet
+  try {
+    db.exec(`ALTER TABLE properties ADD COLUMN availability TEXT NOT NULL DEFAULT 'available' CHECK(availability IN ('available','sold_out'))`);
+  } catch {
+    // Column already exists — safe to ignore
+  }
 }
 
 // ── Seed ONE admin — never allow registration ────────────────────────────
@@ -77,9 +86,14 @@ export interface PropertyRow {
   id: number; title: string; description: string;
   price: number; location: string;
   status: "published" | "draft";
+  availability: "available" | "sold_out";
   created_at: string; updated_at: string;
 }
 
 export interface ImageRow {
   id: number; property_id: number; file_path: string; sort_order: number;
+}
+
+export interface CategoryRow {
+  id: number; name: string;
 }

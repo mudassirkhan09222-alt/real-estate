@@ -27,14 +27,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!form) return NextResponse.json({ error: "Expected multipart" }, { status: 400, headers: NS });
 
   const title = String(form.get("title") ?? ex.title).trim();
-  const description = String(form.get("description") ?? ex.description);
-  const price = Number(form.get("price") ?? ex.price);
-  const location = String(form.get("location") ?? ex.location);
-  const status = form.get("status") === "published" ? "published" : "draft";
-  const now = new Date().toISOString();
+  const description  = String(form.get("description") ?? ex.description);
+  const price        = Number(form.get("price") ?? ex.price);
+  const location     = String(form.get("location") ?? ex.location);
+  const status       = form.get("status") === "published" ? "published" : "draft";
+  const availability = form.get("availability") === "sold_out" ? "sold_out" : "available";
+  const now          = new Date().toISOString();
 
-  db.prepare("UPDATE properties SET title=?,description=?,price=?,location=?,status=?,updated_at=? WHERE id=?")
-    .run(title, description, price, location, status, now, Number(id));
+  db.prepare("UPDATE properties SET title=?,description=?,price=?,location=?,status=?,availability=?,updated_at=? WHERE id=?")
+    .run(title, description, price, location, status, availability, now, Number(id));
 
   // Remove individually deleted images (form field "remove_image_ids" as comma-separated)
   const removeIds = String(form.get("remove_image_ids") ?? "").split(",").map(s => s.trim()).filter(Boolean);

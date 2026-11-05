@@ -27,6 +27,8 @@ export default function EditPage() {
         price: Number(data.price ?? 0),
         location: String(data.location ?? ""),
         status: String(data.status ?? "draft"),
+        availability: String(data.availability ?? "available"),
+        availability: String(data.availability ?? "available"),
         images: Array.isArray(data.images)
           ? (data.images as { id: number; filePath: string }[]).map(i => ({ id: i.id, filePath: i.filePath }))
           : [],

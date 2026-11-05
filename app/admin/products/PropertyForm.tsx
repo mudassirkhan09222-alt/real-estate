@@ -9,9 +9,38 @@ interface Props {
   mode: "create" | "edit";
   initial?: {
     id?: number; title?: string; description?: string; price?: number;
-    location?: string; status?: string; images?: Img[];
+    location?: string; status?: string; availability?: string; images?: Img[];
   };
 }
+
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
+      <div style={{ padding: "14px 22px", borderBottom: "1px solid #f1f5f9", background: "#f8fafc" }}>
+        <p style={{ color: "#475569", fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", margin: 0 }}>{title}</p>
+      </div>
+      <div style={{ padding: "22px", display: "flex", flexDirection: "column", gap: 18 }}>{children}</div>
+    </div>
+  );
+}
+
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label style={{ display: "block", color: "#374151", fontSize: 13, fontWeight: 600, marginBottom: 7 }}>
+        {label}{required && <span style={{ color: "#ef4444", marginLeft: 3 }}>*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+const INP: React.CSSProperties = {
+  width: "100%", background: "#fff", border: "1px solid #d1d5db",
+  borderRadius: 8, padding: "9px 12px", color: "#0f172a", fontSize: 14,
+  outline: "none", boxSizing: "border-box",
+  transition: "border-color .15s",
+};
 
 export default function PropertyForm({ mode, initial }: Props) {
   const router = useRouter();
@@ -20,6 +49,7 @@ export default function PropertyForm({ mode, initial }: Props) {
   const [price,       setPrice]       = useState(String(initial?.price ?? ""));
   const [location,    setLocation]    = useState(initial?.location ?? "");
   const [status,      setStatus]      = useState(initial?.status ?? "draft");
+  const [availability, setAvailability] = useState(initial?.availability ?? "available");
   const [images,      setImages]      = useState<Img[]>(initial?.images ?? []);
   const [removedIds,  setRemovedIds]  = useState<number[]>([]);
   const [newFiles,    setNewFiles]    = useState<File[]>([]);
@@ -31,7 +61,7 @@ export default function PropertyForm({ mode, initial }: Props) {
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     setNewFiles(prev => [...prev, ...files]);
-    files.forEach(f => { const url = URL.createObjectURL(f); setNewPreviews(prev => [...prev, url]); });
+    files.forEach(f => setNewPreviews(prev => [...prev, URL.createObjectURL(f)]));
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -52,10 +82,10 @@ export default function PropertyForm({ mode, initial }: Props) {
     form.set("description", description);
     form.set("price",       price);
     form.set("location",    location);
-    form.set("status",      status);
+    form.set("status",       status);
+    form.set("availability", availability);
     if (mode === "edit" && removedIds.length) form.set("remove_image_ids", removedIds.join(","));
     for (const f of newFiles) form.append("images", f);
-
     const url    = mode === "edit" ? `/api/admin/properties/${initial!.id}` : "/api/admin/properties";
     const method = mode === "edit" ? "PUT" : "POST";
     const r = await fetch(url, { method, body: form });
@@ -65,47 +95,81 @@ export default function PropertyForm({ mode, initial }: Props) {
     router.push("/admin/products"); router.refresh();
   }
 
-  const allPreviews: { src: string; onRemove: () => void }[] = [
-    ...images.map(i => ({ src: i.filePath, onRemove: () => removeExisting(i.id!) })),
-    ...newPreviews.map((src, i) => ({ src, onRemove: () => removeNew(i) })),
+  const allPreviews = [
+    ...images.map(i => ({ src: i.filePath, onRemove: () => removeExisting(i.id!), isBlob: false })),
+    ...newPreviews.map((src, i) => ({ src, onRemove: () => removeNew(i), isBlob: true })),
   ];
 
   return (
     <form onSubmit={onSubmit}>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
-        <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 800, margin: 0 }}>
-          {mode === "edit" ? "Edit Property" : "Add New Property"}
-        </h1>
-        <div style={{ display: "flex", gap: 12 }}>
-          <button type="button" onClick={() => router.back()} style={CAN}>Cancel</button>
-          <button type="submit" disabled={saving} style={SAV}>{saving ? "Saving…" : mode === "edit" ? "Save Changes" : "Create Property"}</button>
+      {/* Page header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
+        <div>
+          <h1 style={{ color: "#0f172a", fontSize: 24, fontWeight: 700, margin: "0 0 4px", letterSpacing: "-0.02em" }}>
+            {mode === "edit" ? "Edit Product" : "Add New Product"}
+          </h1>
+          <p style={{ color: "#64748b", fontSize: 14, margin: 0 }}>
+            {mode === "edit" ? "Update listing details and images." : "Fill in the details to create a new listing."}
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button type="button" onClick={() => router.back()} style={{
+            background: "#fff", color: "#475569", border: "1px solid #d1d5db",
+            borderRadius: 9, padding: "10px 18px", fontWeight: 600, fontSize: 14, cursor: "pointer",
+          }}>Cancel</button>
+          <button type="submit" disabled={saving} style={{
+            background: "#1e2a3b", color: "#fff", border: "none",
+            borderRadius: 9, padding: "10px 22px", fontWeight: 600, fontSize: 14, cursor: "pointer",
+            opacity: saving ? 0.7 : 1,
+          }}>{saving ? "Saving…" : mode === "edit" ? "Save Changes" : "Create Product"}</button>
         </div>
       </div>
 
-      {error && <div style={{ background: "#2a1010", border: "1px solid #f87171", borderRadius: 9, padding: "12px 16px", color: "#f87171", marginBottom: 20, fontSize: 14 }}>{error}</div>}
+      {error && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 9, padding: "12px 16px", color: "#dc2626", fontSize: 14, marginBottom: 20 }}>
+          {error}
+        </div>
+      )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 22, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 20, alignItems: "start" }}>
         {/* Left */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <Card title="Property Details">
-            <F label="Title *"><input value={title} onChange={e => setTitle(e.target.value)} required style={INP} placeholder="3-Bedroom House in DHA Phase 6" /></F>
-            <F label="Description"><textarea value={description} onChange={e => setDescription(e.target.value)} rows={6} style={{ ...INP, resize: "vertical" }} placeholder="Full description of the property…" /></F>
-            <F label="Location"><input value={location} onChange={e => setLocation(e.target.value)} style={INP} placeholder="DHA Phase 6, Karachi" /></F>
+          <Card title="Product Details">
+            <Field label="Title" required>
+              <input value={title} onChange={e => setTitle(e.target.value)} required placeholder="e.g. 3-Bedroom House in DHA Phase 6" style={INP} />
+            </Field>
+            <Field label="Description">
+              <textarea value={description} onChange={e => setDescription(e.target.value)} rows={6} placeholder="Full description of the property…" style={{ ...INP, resize: "vertical" }} />
+            </Field>
+            <Field label="Location">
+              <input value={location} onChange={e => setLocation(e.target.value)} placeholder="DHA Phase 6, Karachi" style={INP} />
+            </Field>
           </Card>
 
           <Card title="Images">
-            <div style={{ border: "2px dashed #2a2a2a", borderRadius: 10, padding: "20px", textAlign: "center", cursor: "pointer" }} onClick={() => fileRef.current?.click()}>
+            <div
+              style={{ border: "2px dashed #d1d5db", borderRadius: 10, padding: "28px 20px", textAlign: "center", cursor: "pointer", background: "#f8fafc" }}
+              onClick={() => fileRef.current?.click()}
+            >
               <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={onFileChange} />
-              <p style={{ color: "#555", fontSize: 14, margin: 0 }}>📸 Click to upload images (WebP auto-converted)</p>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>📸</div>
+              <p style={{ color: "#64748b", fontSize: 14, margin: "0 0 4px", fontWeight: 500 }}>Click to upload images</p>
+              <p style={{ color: "#94a3b8", fontSize: 12, margin: 0 }}>PNG, JPG, WebP up to 25MB each — auto-converted to WebP</p>
             </div>
+
             {allPreviews.length > 0 && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(90px,1fr))", gap: 8, marginTop: 14 }}>
-                {allPreviews.map(({ src, onRemove }, i) => (
-                  <div key={i} style={{ position: "relative", borderRadius: 8, overflow: "hidden", aspectRatio: "4/3", background: "#1e1e1e" }}>
-                    <Image src={src} alt="" fill style={{ objectFit: "cover" }} sizes="100px" unoptimized={src.startsWith("blob:")} />
-                    {i === 0 && <span style={{ position: "absolute", bottom: 3, left: 3, background: "#C8A96E", color: "#0c0c0c", fontSize: 8, fontWeight: 800, borderRadius: 3, padding: "2px 4px" }}>COVER</span>}
-                    <button type="button" onClick={onRemove} style={{ position: "absolute", top: 3, right: 3, background: "#f87171", color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 11, display: "grid", placeItems: "center" }}>✕</button>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(100px,1fr))", gap: 10, marginTop: 4 }}>
+                {allPreviews.map(({ src, onRemove, isBlob }, i) => (
+                  <div key={i} style={{ position: "relative", borderRadius: 8, overflow: "hidden", aspectRatio: "4/3", background: "#f1f5f9" }}>
+                    <Image src={src} alt="" fill style={{ objectFit: "cover" }} sizes="120px" unoptimized={isBlob} />
+                    {i === 0 && (
+                      <span style={{ position: "absolute", bottom: 4, left: 4, background: "#1e2a3b", color: "#fff", fontSize: 9, fontWeight: 700, borderRadius: 4, padding: "2px 6px", letterSpacing: "0.06em" }}>COVER</span>
+                    )}
+                    <button type="button" onClick={onRemove} style={{
+                      position: "absolute", top: 4, right: 4, background: "#ef4444", color: "#fff",
+                      border: "none", borderRadius: "50%", width: 22, height: 22,
+                      cursor: "pointer", fontSize: 12, display: "grid", placeItems: "center", fontWeight: 700,
+                    }}>✕</button>
                   </div>
                 ))}
               </div>
@@ -113,37 +177,51 @@ export default function PropertyForm({ mode, initial }: Props) {
           </Card>
         </div>
 
-        {/* Right */}
+        {/* Right sidebar */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <Card title="Pricing & Status">
-            <F label="Price (PKR)"><input type="number" value={price} onChange={e => setPrice(e.target.value)} style={INP} placeholder="0" min={0} /></F>
-            <F label="Status">
-              <div style={{ display: "flex", gap: 8 }}>
-                {["draft","published"].map(s => (
-                  <button key={s} type="button" onClick={() => setStatus(s)} style={{ flex: 1, padding: "9px 0", borderRadius: 8, border: `1px solid ${status === s ? (s === "published" ? "#4ade80" : "#facc15") : "#2a2a2a"}`, background: status === s ? (s === "published" ? "#14532d" : "#1c1c1c") : "transparent", color: status === s ? (s === "published" ? "#4ade80" : "#facc15") : "#666", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>
-                    {s === "published" ? "✅ Publish" : "📝 Draft"}
-                  </button>
-                ))}
-              </div>
-            </F>
+          <Card title="Pricing">
+            <Field label="Price (PKR)">
+              <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0" min={0} style={INP} />
+            </Field>
+          </Card>
+
+          <Card title="Availability">
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[
+                { value: "available", label: "Available",  desc: "Listing is active for sale / rent", dot: "#22c55e" },
+                { value: "sold_out",  label: "Sold Out",   desc: "Property has been sold",            dot: "#ef4444" },
+              ].map(opt => (
+                <label key={opt.value} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "10px 14px", borderRadius: 8, border: `1px solid ${availability === opt.value ? "#1e2a3b" : "#e2e8f0"}`, background: availability === opt.value ? "#f8fafc" : "#fff" }}>
+                  <input type="radio" name="availability" value={opt.value} checked={availability === opt.value} onChange={() => setAvailability(opt.value)} style={{ accentColor: "#1e2a3b" }} />
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: opt.dot, flexShrink: 0, display: "inline-block" }} />
+                  <span>
+                    <strong style={{ color: "#0f172a", fontSize: 14, display: "block", fontWeight: 600 }}>{opt.label}</strong>
+                    <span style={{ color: "#64748b", fontSize: 12 }}>{opt.desc}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </Card>
+
+          <Card title="Status">
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {["draft", "published"].map(s => (
+                <label key={s} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "10px 14px", borderRadius: 8, border: `1px solid ${status === s ? "#1e2a3b" : "#e2e8f0"}`, background: status === s ? "#f8fafc" : "#fff" }}>
+                  <input type="radio" name="status" value={s} checked={status === s} onChange={() => setStatus(s)} style={{ accentColor: "#1e2a3b" }} />
+                  <span>
+                    <strong style={{ color: "#0f172a", fontSize: 14, display: "block", fontWeight: 600 }}>
+                      {s === "published" ? "Published" : "Draft"}
+                    </strong>
+                    <span style={{ color: "#64748b", fontSize: 12 }}>
+                      {s === "published" ? "Visible on public site" : "Hidden from public"}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
           </Card>
         </div>
       </div>
     </form>
   );
 }
-
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div style={{ background: "#161616", border: "1px solid #222", borderRadius: 12, padding: 22 }}>
-      <p style={{ color: "#555", fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 16px" }}>{title}</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>{children}</div>
-    </div>
-  );
-}
-function F({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div><label style={{ display: "block", color: "#999", fontSize: 13, marginBottom: 7 }}>{label}</label>{children}</div>;
-}
-const INP: React.CSSProperties = { width: "100%", background: "#111", border: "1px solid #2a2a2a", borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" };
-const SAV: React.CSSProperties = { background: "#C8A96E", color: "#0c0c0c", border: "none", borderRadius: 10, padding: "10px 22px", fontWeight: 700, fontSize: 14, cursor: "pointer" };
-const CAN: React.CSSProperties = { background: "#1e1e1e", color: "#999", border: "1px solid #2a2a2a", borderRadius: 10, padding: "10px 18px", fontWeight: 600, fontSize: 14, cursor: "pointer" };
