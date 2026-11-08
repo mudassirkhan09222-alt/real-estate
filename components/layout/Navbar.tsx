@@ -15,11 +15,10 @@ const InstagramSVG = () => (
 );
 
 const NAV_LINKS = [
-  { label: "PROPERTIES",   href: "#properties" },
-  { label: "HOW IT WORKS", href: "#how-it-works" },
-  { label: "SERVICES",     href: "#services" },
-  { label: "TERMS",        href: "#terms" },
-  { label: "CONTACT",      href: "https://wa.me/923122249346", external: true },
+  { label: "PROPERTIES",   href: "/#properties" },
+  { label: "HOW IT WORKS", href: "/#how-it-works" },
+  { label: "PROJECTS",     href: "/projects" },
+  { label: "TERMS",        href: "/#terms" },
 ];
 
 export function Navbar({ forceSolid = false }: { forceSolid?: boolean }) {
@@ -49,13 +48,13 @@ export function Navbar({ forceSolid = false }: { forceSolid?: boolean }) {
 
         {/* ── Logo only (name is inside the logo image) ── */}
         <Link href="/" className="shrink-0">
-          <div className="relative h-28 w-56 overflow-hidden">
+          <div className="relative h-16 w-36 overflow-hidden">
             <Image
-              src="/Real Logo.png"
+              src="/Real 2.png"
               alt="Warsi Jee Construction Company"
               fill
               className="object-contain object-left"
-              sizes="276px"
+              sizes="136px"
               priority
             />
           </div>

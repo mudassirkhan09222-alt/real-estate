@@ -48,13 +48,13 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-[1.3fr_1fr_1fr_1fr_1.1fr]">
 
           {/* ── Col 1: Logo + CEO + Phone ── */}
-          <div className="sm:col-span-2 md:col-span-1 flex flex-col items-start" style={{ gap: 0 }}>
+          <div className="sm:col-span-2 md:col-span-1 flex flex-col items-center" style={{ gap: 0 }}>
 
             {/* Logo — BIGGER, no margin */}
             <Link href="/" className="inline-block">
               <div className="relative overflow-hidden" style={{ height: 260, width: 320 }}>
                 <Image
-                  src="/Real Logo.png"
+                  src="/Real 2.png"
                   alt="Warsi Jee Construction Company"
                   fill
                   className="object-contain object-left-top"
@@ -64,7 +64,7 @@ export function Footer() {
             </Link>
 
             {/* CEO — tight under logo, no extra gap */}
-            <div style={{ marginTop: -20 }}>
+            <div style={{ marginTop: -80 }}>
               <p style={{ fontFamily: "var(--font-inter)", fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(28,18,8,0.4)", marginBottom: 4 }}>
                 CEO &amp; Founder
               </p>

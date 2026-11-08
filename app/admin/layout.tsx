@@ -47,8 +47,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           borderBottom: "1px solid rgba(255,255,255,0.08)",
           minHeight: 72,
         }}>
-          <div style={{ position: "relative", width: 36, height: 36, flexShrink: 0 }}>
-            <Image src="/Real_state_Logo.png" alt="Logo" fill style={{ objectFit: "contain" }} sizes="36px" />
+          <div style={{ position: "relative", width: 44, height: 44, flexShrink: 0 }}>
+            <Image src="/Real 2.png" alt="Logo" fill style={{ objectFit: "contain" }} sizes="36px" />
           </div>
           {!collapsed && (
             <span style={{ color: "#fff", fontWeight: 700, fontSize: 15, whiteSpace: "nowrap", letterSpacing: "0.01em" }}>

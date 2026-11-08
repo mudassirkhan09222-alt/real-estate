@@ -13,7 +13,7 @@ function getInitialProperties(): PaginatedResult<Property> {
   try {
     const db = getDB();
     const total = (db.prepare("SELECT COUNT(*) as c FROM properties WHERE status='published'").get() as { c: number }).c;
-    const rows = db.prepare("SELECT * FROM properties WHERE status='published' ORDER BY created_at DESC LIMIT 9").all() as PropertyRow[];
+    const rows  = db.prepare("SELECT * FROM properties WHERE status='published' ORDER BY created_at DESC LIMIT 6").all() as PropertyRow[];
     const items: Property[] = rows.map(row => {
       const imgs = db.prepare("SELECT * FROM property_images WHERE property_id = ? ORDER BY sort_order").all(row.id) as ImageRow[];
       return {
@@ -27,9 +27,9 @@ function getInitialProperties(): PaginatedResult<Property> {
         createdAt: row.created_at, updatedAt: row.updated_at,
       };
     });
-    return { items, total, page: 1, pageSize: 9, hasMore: total > 9 };
-  } catch {
-    return { items: [], total: 0, page: 1, pageSize: 9, hasMore: false };
+    return { items, total, page: 1, pageSize: 6, hasMore: total > 6 };
+  } catch (_e) {
+    return { items: [], total: 0, page: 1, pageSize: 6, hasMore: false };
   }
 }
 

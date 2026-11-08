@@ -25,7 +25,7 @@ export default function AdminLogin() {
         {/* Logo card */}
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 72, height: 72, background: "#fff", borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.1)", marginBottom: 14 }}>
-            <Image src="/Real_state_Logo.png" alt="Warsi" width={52} height={52} style={{ objectFit: "contain" }} />
+            <Image src="/Real 2.png" alt="Warsi" width={82} height={92} style={{ objectFit: "contain" }} />
           </div>
           <h1 style={{ color: "#0f172a", fontSize: 22, fontWeight: 700, margin: "0 0 4px" }}>Welcome back</h1>
           <p style={{ color: "#64748b", fontSize: 14, margin: 0 }}>Sign in to Warsi Real Estate CMS</p>
