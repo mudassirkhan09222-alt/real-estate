@@ -127,7 +127,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }}>
           <span style={{ color: "#64748b", fontSize: 13 }}>
             Signed in as{" "}
-            <strong style={{ color: "#1e293b", fontWeight: 600 }}>mudassirkhan09222@gmail.com</strong>
+            <strong style={{ color: "#1e293b", fontWeight: 600 }}>warsijeeconstructioncomapny@gmail.com</strong>
           </span>
         </header>
 

@@ -68,12 +68,25 @@ function createTables(db: Database.Database) {
 // ── Seed ONE admin — never allow registration ────────────────────────────
 
 function seedAdmin(db: Database.Database) {
+  const envEmail = (process.env.ADMIN_EMAIL ?? "warsijeeconstructioncomapny@gmail.com").toLowerCase().trim();
+  const envPass  = process.env.ADMIN_PASSWORD ?? "Realstate1234";
+
   const n = (db.prepare("SELECT COUNT(*) as n FROM admins").get() as { n: number }).n;
-  if (n > 0) return;
-  const hash = bcrypt.hashSync("Realstate1234", 12);
-  db.prepare("INSERT INTO admins (email, password_hash) VALUES (?, ?)")
-    .run("mudassirkhan09222@gmail.com", hash);
-  console.log("[db] Admin seeded — mudassirkhan09222@gmail.com / Realstate1234");
+
+  if (n > 0) {
+    // If email changed in .env, update the stored admin record
+    const existing = db.prepare("SELECT email FROM admins LIMIT 1").get() as { email: string } | undefined;
+    if (existing && existing.email !== envEmail) {
+      const newHash = bcrypt.hashSync(envPass, 12);
+      db.prepare("UPDATE admins SET email = ?, password_hash = ?").run(envEmail, newHash);
+      console.log("[db] Admin email updated →", envEmail);
+    }
+    return;
+  }
+
+  const hash = bcrypt.hashSync(envPass, 12);
+  db.prepare("INSERT INTO admins (email, password_hash) VALUES (?, ?)").run(envEmail, hash);
+  console.log("[db] Admin seeded →", envEmail);
 }
 
 // ── Row types ────────────────────────────────────────────────────────────

@@ -31,10 +31,6 @@ export function PropertyGrid({ initial }: { initial: PaginatedResult<Property> }
               <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.8rem", color: "#1C1208" }}>
                 No projects yet
               </p>
-              <p style={{ fontFamily: "var(--font-inter)", fontSize: 14, color: "#7A6652", marginTop: 6 }}>
-                Add your first listing from the{" "}
-                <a href="/admin" style={{ color: "#C8A96E", textDecoration: "underline" }}>admin panel</a>.
-              </p>
             </div>
           ) : (
             items.map(p => <PropertyCard key={p.id} property={p} />)

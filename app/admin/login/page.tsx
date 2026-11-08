@@ -5,7 +5,7 @@ import Image from "next/image";
 
 export default function AdminLogin() {
   const router = useRouter();
-  const [email,    setEmail]    = useState("mudassirkhan09222@gmail.com");
+  const [email,    setEmail]    = useState("warsijeeconstructioncomapny@gmail.com");
   const [password, setPassword] = useState("");
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
