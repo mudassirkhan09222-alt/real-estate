@@ -5,6 +5,7 @@ import { InvestmentsProtected } from "@/components/sections/InvestmentsProtected
 import { YieldForecast } from "@/components/sections/YieldForecast";
 import { YieldForecastBanner } from "@/components/sections/YieldForecastBanner";
 import { TermsConditions } from "@/components/sections/TermsConditions";
+import { ContactForm } from "@/components/sections/ContactForm";
 import { Footer } from "@/components/layout/Footer";
 import { getDB, type PropertyRow, type ImageRow } from "@/lib/db";
 import type { PaginatedResult, Property } from "@/lib/types";
@@ -44,6 +45,7 @@ export default function Home() {
       <YieldForecast />
       <YieldForecastBanner />
       <TermsConditions />
+      <ContactForm />
       <Footer />
     </>
   );
