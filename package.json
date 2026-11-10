@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "@payloadcms/next": "^3.91.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^8.0.2",

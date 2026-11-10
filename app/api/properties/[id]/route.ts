@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDB, type PropertyRow, type ImageRow } from "@/lib/db";
+import { dbGetProperty, dbGetImages } from "@/lib/db";
 
 const NS = { "Cache-Control": "no-store" };
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = getDB();
-  const row = db.prepare("SELECT * FROM properties WHERE id = ?").get(Number(id)) as PropertyRow | undefined;
+  const row = await dbGetProperty(Number(id));
   if (!row) return NextResponse.json({ error: "Not found" }, { status: 404, headers: NS });
-  const imgs = db.prepare("SELECT * FROM property_images WHERE property_id = ? ORDER BY sort_order").all(row.id) as ImageRow[];
+  const imgs = await dbGetImages(row.id);
   const item = {
     id: String(row.id), slug: String(row.id), title: row.title,
     summary: row.description.slice(0, 120), description: row.description,

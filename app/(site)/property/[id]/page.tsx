@@ -5,7 +5,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, Bath, Bed, Maximize2, MapPin, TrendingUp, Calendar } from "lucide-react";
-import { getDB, type PropertyRow, type ImageRow } from "@/lib/db";
+import { dbGetProperty, dbGetImages, type PropertyRow, type ImageRow } from "@/lib/db";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PropertyGallery } from "@/components/sections/PropertyGallery";
@@ -17,8 +17,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const db  = getDB();
-  const row = db.prepare("SELECT * FROM properties WHERE id = ?").get(Number(id)) as PropertyRow | undefined;
+  const row = await dbGetProperty(Number(id));
   if (!row) return { title: "Property not found" };
   return { title: row.title, description: row.description.slice(0,160) || `Property in ${row.location}` };
 }
@@ -33,10 +32,9 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
 async function PropertyDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db  = getDB();
-  const row = db.prepare("SELECT * FROM properties WHERE id = ?").get(Number(id)) as PropertyRow | undefined;
+  const row = await dbGetProperty(Number(id));
   if (!row) notFound();
-  const imgs = db.prepare("SELECT * FROM property_images WHERE property_id = ? ORDER BY sort_order").all(row!.id) as ImageRow[];
+  const imgs = await dbGetImages(row!.id);
   const property = {
     id: String(row!.id), slug: String(row!.id), title: row!.title,
     summary: row!.description.slice(0,120), description: row!.description,
