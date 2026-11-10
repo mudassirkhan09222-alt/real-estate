@@ -113,7 +113,8 @@ async function pgBootstrap() {
   const rows = await sql`SELECT email FROM admins LIMIT 1`;
   if (rows.length === 0) {
     await sql`INSERT INTO admins (email,password_hash) VALUES (${envEmail},${bcrypt.hashSync(envPass,12)})`;
-  } else if (rows[0].email !== envEmail) {
+  } else {
+    // Always sync email AND password from env on every bootstrap
     await sql`UPDATE admins SET email=${envEmail},password_hash=${bcrypt.hashSync(envPass,12)}`;
   }
 }
