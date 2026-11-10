@@ -5,7 +5,7 @@ import Image from "next/image";
 
 export default function AdminLogin() {
   const router = useRouter();
-  const [email,    setEmail]    = useState("warsijeeconstructioncomapny@gmail.com");
+  const [email,    setEmail]    = useState("warsijeeconstructioncompany@gmail.com");
   const [password, setPassword] = useState("");
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
@@ -16,6 +16,7 @@ export default function AdminLogin() {
     const d = await r.json();
     setLoading(false);
     if (!r.ok) { setError(d.error || "Invalid email or password"); return; }
+    router.refresh();
     router.replace("/admin");
   }
 

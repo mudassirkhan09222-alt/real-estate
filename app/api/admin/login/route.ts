@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { makeToken, cookieOpts, COOKIE } from "@/lib/auth";
+import { bootstrapDB, findAdmin } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
@@ -12,31 +13,20 @@ export async function POST(req: NextRequest) {
 
     const { email, password } = body;
 
-    // Check DATABASE_URL
-    if (!process.env.DATABASE_URL) {
-      console.error("[login] DATABASE_URL is not set");
-      return NextResponse.json({ error: "Database not configured. Set DATABASE_URL in Vercel environment variables." }, { status: 500 });
-    }
-
-    const { bootstrapDB } = await import("@/lib/db");
-    const { neon } = await import("@neondatabase/serverless");
-
+    // Bootstrap DB (SQLite locally, Postgres on Vercel)
     await bootstrapDB();
 
-    const sql = neon(process.env.DATABASE_URL);
-    const rows = await sql`SELECT * FROM admins WHERE email = ${email.toLowerCase().trim()} LIMIT 1`;
-
-    if (!rows[0]) {
+    const admin = await findAdmin(email);
+    if (!admin) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    const admin = rows[0];
-    const valid = bcrypt.compareSync(password, admin.password_hash as string);
+    const valid = bcrypt.compareSync(password, admin.password_hash);
     if (!valid) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    const token = await makeToken(admin.email as string);
+    const token = await makeToken(admin.email);
     (await cookies()).set(COOKIE, token, cookieOpts());
     return NextResponse.json({ ok: true });
 
