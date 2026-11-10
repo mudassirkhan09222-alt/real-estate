@@ -9,8 +9,16 @@
 import bcrypt from "bcryptjs";
 
 // ── Detect mode ──────────────────────────────────────────────────────────────
-
-const USE_POSTGRES = !!(process.env.DATABASE_URL && !process.env.DATABASE_URL.startsWith("file:") && !process.env.DATABASE_URL.includes("placeholder"));
+// Use Postgres if:
+// 1. VERCEL environment (always use Postgres, never SQLite)
+// 2. DATABASE_URL is set and is a real postgres URL
+const USE_POSTGRES = !!(
+  process.env.VERCEL ||                                    // Vercel serverless
+  (process.env.DATABASE_URL &&
+   !process.env.DATABASE_URL.startsWith("file:") &&
+   !process.env.DATABASE_URL.includes("placeholder") &&
+   process.env.DATABASE_URL.startsWith("postgres"))
+);
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -24,6 +32,9 @@ export interface CategoryRow { id: number; name: string; }
 // ══════════════════════════════════════════════════════════════════════════════
 
 function getSQLiteDB() {
+  if (process.env.VERCEL) {
+    throw new Error("SQLite is not supported on Vercel. Set DATABASE_URL to a Neon PostgreSQL connection string.");
+  }
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const Database = require("better-sqlite3");
   const path = require("path") as typeof import("path");
