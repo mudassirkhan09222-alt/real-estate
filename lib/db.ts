@@ -7,18 +7,33 @@ import bcrypt from "bcryptjs";
 import path from "path";
 import fs from "fs";
 
-const DB_PATH = path.join(process.cwd(), "data", "warsi.db");
-fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+// ✅ FIX: Vercel par /tmp folder use karein (writable), local par ./data use karein
+const isVercel = !!process.env.VERCEL;
+const DB_DIR = isVercel ? "/tmp" : path.join(process.cwd(), "data");
+const DB_PATH = path.join(DB_DIR, "warsi.db");
+
+// Ensure directory exists before creating database
+if (!fs.existsSync(DB_DIR)) {
+  fs.mkdirSync(DB_DIR, { recursive: true });
+}
 
 let _db: Database.Database | null = null;
 
 export function getDB(): Database.Database {
   if (_db) return _db;
-  _db = new Database(DB_PATH);
-  _db.pragma("journal_mode = WAL");
-  _db.pragma("foreign_keys = ON");
-  createTables(_db);
-  seedAdmin(_db);
+  
+  // Re-open connection if it was lost (e.g., after cold start on Vercel)
+  try {
+    _db = new Database(DB_PATH);
+    _db.pragma("journal_mode = WAL");
+    _db.pragma("foreign_keys = ON");
+    createTables(_db);
+    seedAdmin(_db);
+  } catch (error) {
+    console.error("[db] Failed to initialize database:", error);
+    throw error;
+  }
+  
   return _db;
 }
 
