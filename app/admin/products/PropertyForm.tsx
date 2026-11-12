@@ -42,6 +42,82 @@ const INP: React.CSSProperties = {
   transition: "border-color .15s",
 };
 
+// Vercel rejects any request body over 4.5 MB (413 FUNCTION_PAYLOAD_TOO_LARGE)
+// before our API code runs, so photos are shrunk in the browser first and sent
+// in batches that each stay well under that limit.
+const MAX_BATCH_BYTES    = 3.5 * 1024 * 1024;
+const MAX_PHOTO_BYTES    = 4 * 1024 * 1024;
+const MAX_SIDE           = 1920;            // the server resizes to this anyway (lib/upload.ts)
+const SHRINK_ABOVE_BYTES = 1024 * 1024;
+
+interface Pending { file: File; preview: string; }
+interface Prepared extends Pending { upload: File; }
+interface SavedProperty { id: number; images?: Img[]; }
+
+const mb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1);
+
+/** Shrink a photo to ≤1920px JPEG in the browser; returns the original when it can't or needn't be shrunk. */
+async function shrinkPhoto(file: File): Promise<File> {
+  if (!/^image\/(jpeg|png|webp|bmp|avif)$/.test(file.type)) return file; // GIF, SVG, HEIC…: send as is
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new window.Image();
+    img.src = url;
+    await img.decode();
+    const scale = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+    if (scale === 1 && file.size <= SHRINK_ABOVE_BYTES) return file;
+    const canvas = document.createElement("canvas");
+    canvas.width  = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.fillStyle = "#fff";                       // JPEG has no transparency
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>(done => canvas.toBlob(done, "image/jpeg", 0.85));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch {
+    return file;                                  // browser can't decode it; let the server try
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/** Group photos so each request stays under MAX_BATCH_BYTES. */
+function toBatches(items: Prepared[]): Prepared[][] {
+  const batches: Prepared[][] = [];
+  let current: Prepared[] = [];
+  let size = 0;
+  for (const item of items) {
+    if (current.length && size + item.upload.size > MAX_BATCH_BYTES) {
+      batches.push(current); current = []; size = 0;
+    }
+    current.push(item); size += item.upload.size;
+  }
+  if (current.length) batches.push(current);
+  return batches;
+}
+
+/** Send one save request. Throws a readable Error; Vercel's own errors (e.g. 413) are plain text, not JSON. */
+async function send(url: string, method: "POST" | "PUT", body: FormData): Promise<SavedProperty> {
+  let r: Response;
+  try {
+    r = await fetch(url, { method, body });
+  } catch {
+    throw new Error("Network error. Check your internet connection and try again.");
+  }
+  const text = await r.text();
+  let data: unknown = null;
+  try { data = JSON.parse(text); } catch { /* not JSON */ }
+  const obj = data && typeof data === "object" ? data as Record<string, unknown> : null;
+  if (r.ok && obj && "id" in obj) return obj as unknown as SavedProperty;
+  if (obj && typeof obj.error === "string") throw new Error(obj.error);
+  if (r.status === 413) throw new Error("The photos are too large to upload. Try fewer or smaller photos.");
+  if (r.status === 401) throw new Error("Your session has expired. Please sign in again.");
+  throw new Error(`Save failed (server error ${r.status}). Please try again.`);
+}
+
 export default function PropertyForm({ mode, initial }: Props) {
   const router = useRouter();
   const [title,       setTitle]       = useState(initial?.title ?? "");
@@ -52,16 +128,17 @@ export default function PropertyForm({ mode, initial }: Props) {
   const [availability, setAvailability] = useState(initial?.availability ?? "available");
   const [images,      setImages]      = useState<Img[]>(initial?.images ?? []);
   const [removedIds,  setRemovedIds]  = useState<number[]>([]);
-  const [newFiles,    setNewFiles]    = useState<File[]>([]);
-  const [newPreviews, setNewPreviews] = useState<string[]>([]);
+  const [pending,     setPending]     = useState<Pending[]>([]);
+  // Set once the product exists, so a retry after a failed photo batch updates it instead of creating a duplicate.
+  const [savedId,     setSavedId]     = useState<number | undefined>(initial?.id);
   const [saving,      setSaving]      = useState(false);
+  const [progress,    setProgress]    = useState("");
   const [error,       setError]       = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    setNewFiles(prev => [...prev, ...files]);
-    files.forEach(f => setNewPreviews(prev => [...prev, URL.createObjectURL(f)]));
+    setPending(prev => [...prev, ...files.map(file => ({ file, preview: URL.createObjectURL(file) }))]);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -70,34 +147,71 @@ export default function PropertyForm({ mode, initial }: Props) {
     setRemovedIds(prev => [...prev, id]);
   }
   function removeNew(idx: number) {
-    URL.revokeObjectURL(newPreviews[idx]);
-    setNewFiles(prev => prev.filter((_, i) => i !== idx));
-    setNewPreviews(prev => prev.filter((_, i) => i !== idx));
+    URL.revokeObjectURL(pending[idx].preview);
+    setPending(prev => prev.filter((_, i) => i !== idx));
   }
 
   async function onSubmit(e: FormEvent) {
-    e.preventDefault(); setError(""); setSaving(true);
-    const form = new FormData();
-    form.set("title",       title);
-    form.set("description", description);
-    form.set("price",       price);
-    form.set("location",    location);
-    form.set("status",       status);
-    form.set("availability", availability);
-    if (mode === "edit" && removedIds.length) form.set("remove_image_ids", removedIds.join(","));
-    for (const f of newFiles) form.append("images", f);
-    const url    = mode === "edit" ? `/api/admin/properties/${initial!.id}` : "/api/admin/properties";
-    const method = mode === "edit" ? "PUT" : "POST";
-    const r = await fetch(url, { method, body: form });
-    const d = await r.json();
-    setSaving(false);
-    if (!r.ok) { setError(d.error ?? "Save failed"); return; }
-    router.push("/admin/products"); router.refresh();
+    e.preventDefault();
+    if (saving) return;
+    setError(""); setSaving(true);
+
+    let id        = savedId;
+    let removeIds = removedIds;
+    let left      = pending;
+    let savedSome = false;
+    try {
+      setProgress(left.length ? "Preparing photos…" : "Saving…");
+      const prepared: Prepared[] = await Promise.all(left.map(async p => ({ ...p, upload: await shrinkPhoto(p.file) })));
+      const tooBig = prepared.find(p => p.upload.size > MAX_PHOTO_BYTES);
+      if (tooBig) {
+        throw new Error(`"${tooBig.file.name}" is too large to upload (${mb(tooBig.upload.size)} MB) and couldn't be shrunk. Please use a JPG or PNG photo under 4 MB.`);
+      }
+
+      const batches = toBatches(prepared);
+      if (!batches.length) batches.push([]);          // no new photos: still save the details
+
+      for (let b = 0; b < batches.length; b++) {
+        setProgress(batches.length > 1 ? `Uploading photos ${b + 1}/${batches.length}…`
+                  : batches[b].length ? "Uploading photos…" : "Saving…");
+        const form = new FormData();
+        form.set("title",        title);
+        form.set("description",  description);
+        form.set("price",        price);
+        form.set("location",     location);
+        form.set("status",       status);
+        form.set("availability", availability);
+        if (removeIds.length) form.set("remove_image_ids", removeIds.join(","));
+        for (const p of batches[b]) form.append("images", p.upload, p.upload.name);
+
+        const saved = await send(
+          id == null ? "/api/admin/properties" : `/api/admin/properties/${id}`,
+          id == null ? "POST" : "PUT",
+          form,
+        );
+
+        // Record what is saved so a retry only sends what's left.
+        id = saved.id; removeIds = []; savedSome = true;
+        const sent = new Set(batches[b].map(p => p.preview));
+        sent.forEach(u => URL.revokeObjectURL(u));
+        left = left.filter(p => !sent.has(p.preview));
+        setSavedId(id); setRemovedIds([]); setImages(saved.images ?? []); setPending(left);
+      }
+
+      router.push("/admin/products"); router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const button = mode === "edit" ? "Save Changes" : "Create Product";
+      setError(savedSome && left.length
+        ? `The product was saved, but ${left.length} photo${left.length === 1 ? "" : "s"} did not upload: ${msg} Press "${button}" again to retry.`
+        : msg);
+      setSaving(false); setProgress("");
+    }
   }
 
   const allPreviews = [
     ...images.map(i => ({ src: i.filePath, onRemove: () => removeExisting(i.id!), isBlob: false })),
-    ...newPreviews.map((src, i) => ({ src, onRemove: () => removeNew(i), isBlob: true })),
+    ...pending.map((p, i) => ({ src: p.preview, onRemove: () => removeNew(i), isBlob: true })),
   ];
 
   return (
@@ -121,7 +235,7 @@ export default function PropertyForm({ mode, initial }: Props) {
             background: "#1e2a3b", color: "#fff", border: "none",
             borderRadius: 9, padding: "10px 22px", fontWeight: 600, fontSize: 14, cursor: "pointer",
             opacity: saving ? 0.7 : 1,
-          }}>{saving ? "Saving…" : mode === "edit" ? "Save Changes" : "Create Product"}</button>
+          }}>{saving ? (progress || "Saving…") : mode === "edit" ? "Save Changes" : "Create Product"}</button>
         </div>
       </div>
 
