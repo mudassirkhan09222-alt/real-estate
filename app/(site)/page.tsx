@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { HeroSection } from "@/components/sections/HeroSection";
 import { AccessProperty } from "@/components/sections/AccessProperty";
 import { PropertyGrid } from "@/components/sections/PropertyGrid";
@@ -31,7 +33,8 @@ async function getInitialProperties(): Promise<PaginatedResult<Property>> {
       })
     );
     return { items, total, page: 1, pageSize: 6, hasMore: total > 6 };
-  } catch (_e) {
+  } catch (e) {
+    console.error("[getInitialProperties] failed:", e);
     return { items: [], total: 0, page: 1, pageSize: 6, hasMore: false };
   }
 }
